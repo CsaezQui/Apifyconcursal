@@ -2,10 +2,6 @@
   "name": "apify-concursal-final",
   "version": "1.0.0",
   "dependencies": {
-    "apify": "^3.0.0",
-    "puppeteer": "^22.8.2"
-  },
-  "scripts": {
-    "start": "node main.js"
-  }
-}
+  "puppeteer": "^22.8.2",
+  "apify": "^3.0.0"
+}}
