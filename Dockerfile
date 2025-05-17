@@ -4,7 +4,8 @@ ENV PUPPETEER_SKIP_DOWNLOAD=false
 
 COPY . ./
 
-# Fuerza la instalación y la descarga de Chromium
-RUN rm -rf node_modules && npm install --omit=dev && node node_modules/puppeteer/install.js
+RUN rm -rf node_modules \
+    && npm install puppeteer --omit=dev \
+    && node node_modules/puppeteer/install.mjs
 
 CMD ["node", "main.js"]
