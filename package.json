@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "dependencies": {
     "apify": "^3.0.0",
-   "puppeteer-core": "^22.8.2"
-  },
-  "scripts": {
-    "start": "node main.js"
+    "puppeteer": "19.11.1"
   }
 }
