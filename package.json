@@ -4,4 +4,4 @@
   "dependencies": {
   "puppeteer": "^22.8.2",
   "apify": "^3.0.0"
-}}
+}
