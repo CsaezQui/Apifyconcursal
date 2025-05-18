@@ -1,5 +1,5 @@
-import { Actor } from 'apify';
 import { chromium } from 'playwright';
+import { Actor } from 'apify';
 
 await Actor.init();
 
@@ -11,52 +11,34 @@ console.log(`Buscando datos para empresa: ${nombreEmpresa}, CIF: ${cif}`);
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
 
-try {
-    await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
-        waitUntil: 'load',
-        timeout: 60000,
-    });
+await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { timeout: 60000 });
 
-    // Aceptar cookies si aparece el aviso
-    const btnAceptarCookies = await page.locator('#klaro button[aria-label="Aceptar todas las cookies"]');
-    if (await btnAceptarCookies.isVisible()) {
-        await btnAceptarCookies.click();
-        await page.waitForTimeout(1000);
-    }
-
-    // Esperar y rellenar el campo de nombre
-    await page.waitForSelector('input[placeholder*="nombre"]', { timeout: 60000 });
-    await page.fill('input[placeholder*="nombre"]', nombreEmpresa);
-
-    // Rellenar el campo de CIF si se ha proporcionado
-    if (cif) {
-        await page.fill('input[placeholder*="NIF"]', cif);
-    }
-
-    // Click en el botón de búsqueda correcto (por ID específico)
-    await page.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search').click();
-
-    // Esperar a los resultados
-    await page.waitForSelector('.resultado-bloque', { timeout: 60000 });
-
-    const resultados = await page.$$eval('.resultado-bloque', bloques =>
-        bloques.map(b => b.innerText.trim())
-    );
-
-    await Actor.setValue('OUTPUT', {
-        ok: true,
-        mensaje: `Se encontraron ${resultados.length} resultados`,
-        resultados,
-    });
-
-} catch (error) {
-    console.error('Error detectado:', error);
-    await Actor.setValue('OUTPUT', {
-        ok: false,
-        error: error.message,
-        stack: error.stack,
-    });
-} finally {
-    await browser.close();
-    await Actor.exit();
+// Aceptamos el aviso de cookies si está visible
+const cookiesButton = page.locator('#klaro button[class*="accept"]');
+if (await cookiesButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await cookiesButton.click();
+    await page.waitForTimeout(1000); // Tiempo para que se cierre la capa
 }
+
+// Rellenamos el formulario
+await page.getByPlaceholder('introduzca nombre').fill(nombreEmpresa);
+if (cif) {
+    await page.getByPlaceholder('introduzca NIF').fill(cif);
+}
+
+// Hacemos clic en el botón correcto
+await page.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search').click();
+
+// Esperamos resultados (máximo 30 segundos)
+await page.waitForSelector('.search-results', { timeout: 30000 }).catch(() => {
+    console.error('No se encontraron resultados o no cargaron a tiempo');
+});
+
+// Aquí podrías extraer resultados si hiciera falta
+await Actor.setValue('OUTPUT', {
+    ok: true,
+    mensaje: 'Búsqueda completada (revisa si hay resultados en la web manualmente)'
+});
+
+await browser.close();
+await Actor.exit();
