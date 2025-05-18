@@ -3,26 +3,37 @@ import { chromium } from 'playwright';
 
 await Actor.init();
 
-try {
-    console.log('Lanzando navegador...');
-    const browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
+const input = await Actor.getInput();
+const { nombreEmpresa, cif } = input;
 
-    await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { waitUntil: 'networkidle' });
+console.log(`Buscando datos para empresa: ${nombreEmpresa}, CIF: ${cif}`);
 
-    await Actor.setValue('OUTPUT', {
-        ok: true,
-        mensaje: 'Página cargada correctamente'
-    });
+const browser = await chromium.launch({ headless: true });
+const page = await browser.newPage();
 
-    await browser.close();
-} catch (error) {
-    console.error('Error detectado:', error);
-    await Actor.setValue('OUTPUT', {
-        ok: false,
-        error: error.message || error.toString(),
-        stack: error.stack || 'No stack trace'
-    });
-} finally {
-    await Actor.exit();
-}
+await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { waitUntil: 'domcontentloaded' });
+
+await page.fill('#nombre', nombreEmpresa);
+await page.fill('#cif', cif);
+await page.click('#btnBuscar');
+
+await page.waitForSelector('#tablaResultados tbody tr', { timeout: 10000 });
+
+const resultado = await page.evaluate(() => {
+    const fila = document.querySelector('#tablaResultados tbody tr');
+    if (!fila) return { estado: 'Sin resultados' };
+    const columnas = fila.querySelectorAll('td');
+    return {
+        nombre: columnas[0]?.textContent?.trim(),
+        cif: columnas[1]?.textContent?.trim(),
+        estado: columnas[4]?.textContent?.trim(),
+    };
+});
+
+await Actor.setValue('OUTPUT', {
+    ok: true,
+    resultado,
+});
+
+await browser.close();
+await Actor.exit();
