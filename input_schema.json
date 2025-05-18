@@ -6,7 +6,8 @@
     "nombreEmpresa": {
       "type": "string",
       "title": "Nombre de la empresa",
-      "description": "Nombre de la empresa que deseas consultar"
+      "description": "Nombre de la empresa que deseas consultar",
+      "editor": "textfield"
     },
     "cif": {
       "type": "string",
