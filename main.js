@@ -35,10 +35,22 @@ Actor.main(async () => {
 
         await page.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
 
-        await Actor.setValue('OUTPUT', {
-            ok: true,
-            mensaje: 'Consulta realizada correctamente'
-        });
+        const contenidoTabla = await page.textContent('.resultado-busqueda');
+        const noHayDatos = contenidoTabla.includes('NingÃºn dato disponible en esta tabla');
+
+        if (noHayDatos) {
+            await Actor.setValue('OUTPUT', {
+                ok: true,
+                resultado: 'no_concursal',
+                mensaje: 'La empresa no figura en situaciÃ³n concursal'
+            });
+        } else {
+            await Actor.setValue('OUTPUT', {
+                ok: true,
+                resultado: 'concursal',
+                mensaje: 'La empresa figura con publicaciones concursales'
+            });
+        }
 
     } catch (error) {
         await Actor.setValue('OUTPUT', {
