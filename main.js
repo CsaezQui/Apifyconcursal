@@ -1,3 +1,4 @@
+
 import { chromium } from 'playwright';
 import { Actor } from 'apify';
 
@@ -11,34 +12,31 @@ console.log(`Buscando datos para empresa: ${nombreEmpresa}, CIF: ${cif}`);
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
 
-await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { timeout: 60000 });
+await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { waitUntil: 'domcontentloaded' });
 
-// Aceptamos el aviso de cookies si está visible
-const cookiesButton = page.locator('#klaro button[class*="accept"]');
-if (await cookiesButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await cookiesButton.click();
-    await page.waitForTimeout(1000); // Tiempo para que se cierre la capa
+// Aceptar cookies si aparece el aviso
+const aceptarCookies = page.locator('button[title="Aceptar todas las cookies"]');
+if (await aceptarCookies.isVisible()) {
+    console.log("Aceptando cookies...");
+    await aceptarCookies.click();
+    await page.waitForTimeout(1000); // Esperar a que se cierre la capa
 }
 
-// Rellenamos el formulario
-await page.getByPlaceholder('introduzca nombre').fill(nombreEmpresa);
-if (cif) {
-    await page.getByPlaceholder('introduzca NIF').fill(cif);
-}
+// Rellenar el nombre del deudor
+await page.waitForSelector('input[placeholder*="nombre"]', { timeout: 60000 });
+await page.fill('input[placeholder*="nombre"]', nombreEmpresa);
 
-// Hacemos clic en el botón correcto
-await page.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search').click();
+// Rellenar el CIF
+await page.fill('input[placeholder*="NIF"]', cif);
 
-// Esperamos resultados (máximo 30 segundos)
-await page.waitForSelector('.search-results', { timeout: 30000 }).catch(() => {
-    console.error('No se encontraron resultados o no cargaron a tiempo');
-});
+// Hacer clic en el botÃ³n Buscar
+const botonBuscar = page.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
+await botonBuscar.click({ timeout: 30000 });
 
-// Aquí podrías extraer resultados si hiciera falta
-await Actor.setValue('OUTPUT', {
-    ok: true,
-    mensaje: 'Búsqueda completada (revisa si hay resultados en la web manualmente)'
-});
+await page.waitForLoadState('domcontentloaded');
+console.log('BÃºsqueda ejecutada');
+
+await Actor.pushData({ ok: true, mensaje: 'Consulta ejecutada correctamente' });
 
 await browser.close();
 await Actor.exit();
