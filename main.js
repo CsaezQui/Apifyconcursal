@@ -18,13 +18,16 @@ Actor.main(async () => {
             timeout: 60000
         });
 
+        // Espera extra para asegurar carga total del portal
+        await page.waitForTimeout(3000);
+
         const botonAceptarCookies = page.locator('#klaro button[title="Aceptar"]');
         if (await botonAceptarCookies.isVisible({ timeout: 2000 })) {
             await botonAceptarCookies.click();
         }
 
-        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre');
-        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo');
+        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 60000 });
+        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 60000 });
 
         await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
         await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
@@ -33,24 +36,12 @@ Actor.main(async () => {
         await botonBuscar.scrollIntoViewIfNeeded();
         await botonBuscar.click();
 
-        await page.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
+        await page.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 60000 });
 
-        const contenidoTabla = await page.textContent('.resultado-busqueda');
-        const noHayDatos = contenidoTabla.includes('NingÃºn dato disponible en esta tabla');
-
-        if (noHayDatos) {
-            await Actor.setValue('OUTPUT', {
-                ok: true,
-                resultado: 'no_concursal',
-                mensaje: 'La empresa no figura en situaciÃ³n concursal'
-            });
-        } else {
-            await Actor.setValue('OUTPUT', {
-                ok: true,
-                resultado: 'concursal',
-                mensaje: 'La empresa figura con publicaciones concursales'
-            });
-        }
+        await Actor.setValue('OUTPUT', {
+            ok: true,
+            mensaje: 'Consulta realizada correctamente'
+        });
 
     } catch (error) {
         await Actor.setValue('OUTPUT', {
