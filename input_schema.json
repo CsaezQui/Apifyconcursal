@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "schemaVersion": 1,
   "title": "Consulta Concursal",
   "type": "object",
   "properties": {
@@ -7,13 +7,13 @@
       "type": "string",
       "title": "Nombre de la empresa",
       "description": "Introduce el nombre o parte del nombre del deudor/inhabilitado/administrador concursal",
-      "editor": "text"
+      "editor": "textfield"
     },
     "cif": {
       "type": "string",
       "title": "Documento identificativo",
       "description": "Introduce NIF/CIF o número de pasaporte",
-      "editor": "text"
+      "editor": "textfield"
     }
   },
   "required": ["nombreEmpresa", "cif"]
