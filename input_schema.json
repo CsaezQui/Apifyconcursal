@@ -1,20 +1,20 @@
 {
-  "title": "Consulta concursal",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Consulta Concursal",
   "type": "object",
-  "schemaVersion": 1,
   "properties": {
     "nombreEmpresa": {
       "type": "string",
       "title": "Nombre de la empresa",
-      "description": "Nombre de la empresa que deseas consultar",
-      "editor": "textfield"
+      "description": "Introduce el nombre o parte del nombre del deudor/inhabilitado/administrador concursal",
+      "editor": "text"
     },
     "cif": {
       "type": "string",
-      "title": "CIF de la empresa",
-      "description": "CIF de la empresa (opcional)",
-      "editor": "textfield"
+      "title": "Documento identificativo",
+      "description": "Introduce NIF/CIF o número de pasaporte",
+      "editor": "text"
     }
   },
-  "required": ["nombreEmpresa"]
+  "required": ["nombreEmpresa", "cif"]
 }
