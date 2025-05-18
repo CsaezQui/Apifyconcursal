@@ -1,60 +1,60 @@
-import { chromium } from 'playwright';
-import { Actor } from 'apify';
+const Apify = require('apify');
+const { chromium } = require('playwright');
 
-await Actor.init();
+Apify.main(async () => {
+    const input = await Apify.getInput();
+    const nombreEmpresa = input.nombreEmpresa;
+    const documentoIdentificativo = input.documentoIdentificativo;
 
-const input = await Actor.getInput();
-const nombreEmpresa = input.nombreEmpresa;
-const cif = input.cif;
+    console.log(`Buscando datos para empresa: ${nombreEmpresa}, CIF: ${documentoIdentificativo}`);
 
-console.log(`Buscando datos para empresa: ${nombreEmpresa}, CIF: ${cif}`);
+    const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext();
+    const page = await context.newPage();
 
-const browser = await chromium.launch({ headless: true });
-const page = await browser.newPage();
+    try {
+        await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
+            waitUntil: 'domcontentloaded',
+            timeout: 60000
+        });
 
-try {
-    await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { timeout: 60000 });
+        // Cerrar el banner de cookies si aparece
+        const botonAceptarCookies = await page.locator('#klaro button[title="Aceptar"]').first();
+        if (await botonAceptarCookies.isVisible()) {
+            console.log('Cerrando banner de cookies...');
+            await botonAceptarCookies.click();
+        }
 
-    // Aceptar cookies si el banner está presente
-    const aceptarCookies = page.locator('button[data-testid="Klaro__acceptAll"]');
-    if (await aceptarCookies.isVisible({ timeout: 3000 }).catch(() => false)) {
-        console.log("Aceptando cookies...");
-        await aceptarCookies.click();
-        await page.waitForTimeout(500);
+        // Esperar los campos
+        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
+        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
+
+        // Rellenar campos
+        await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
+        await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
+
+        // Hacer clic en el botón de búsqueda
+        const botonBuscar = page.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
+        await botonBuscar.scrollIntoViewIfNeeded();
+        await botonBuscar.click();
+
+        // Esperar los resultados
+        await page.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
+
+        console.log('Consulta realizada correctamente');
+        await Apify.setValue('OUTPUT', {
+            ok: true,
+            mensaje: 'Consulta realizada correctamente'
+        });
+
+    } catch (error) {
+        console.error('Error detectado:', error);
+        await Apify.setValue('OUTPUT', {
+            ok: false,
+            error: error.message,
+            stack: error.stack
+        });
+    } finally {
+        await browser.close();
     }
-
-    // Esperar y rellenar el campo del nombre del deudor
-    await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
-    await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
-
-    // Esperar y rellenar el campo del CIF
-    await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documento', { timeout: 30000 });
-    await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documento', cif);
-
-    // Pulsar el botón de búsqueda
-    await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search', { timeout: 30000 });
-    await page.click('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
-
-    // Esperar resultados
-    await page.waitForTimeout(5000); // puedes afinarlo con un waitForSelector si conoces el resultado
-
-    // Aquí puedes recoger resultados si lo necesitas, por ejemplo:
-    const resultados = await page.content();
-
-    await Actor.setValue('OUTPUT', {
-        ok: true,
-        mensaje: 'Búsqueda realizada correctamente',
-        resultadosExtraidos: resultados
-    });
-
-} catch (error) {
-    console.error('Error detectado:', error);
-    await Actor.setValue('OUTPUT', {
-        ok: false,
-        error: error.message,
-        stack: error.stack
-    });
-} finally {
-    await browser.close();
-    await Actor.exit();
-}
+});
