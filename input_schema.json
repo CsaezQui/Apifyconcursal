@@ -1,21 +1,20 @@
 {
-  "title": "Consulta en Publicidad Concursal",
-  "description": "Introduce los datos de la empresa para consultar su situación concursal.",
-  "schemaVersion": 1,
+  "title": "Consulta concursal",
   "type": "object",
+  "schemaVersion": 1,
   "properties": {
     "nombreEmpresa": {
-      "title": "Nombre o razón social",
+      "title": "Nombre de la empresa",
       "type": "string",
-      "editor": "textfield",
-      "description": "Nombre del deudor, inhabilitado o administrador concursal. Es el campo de texto 'Introduzca nombre' en la web."
+      "description": "Nombre completo del deudor/empresa a buscar",
+      "editor": "textfield"
     },
-    "cifEmpresa": {
-      "title": "CIF/NIF/NIE",
+    "cif": {
+      "title": "CIF/NIF",
       "type": "string",
-      "editor": "textfield",
-      "description": "Documento identificativo del buscado. Es el campo de texto 'Introduzca nif / cif / nie / pasaporte'."
+      "description": "Número de identificación fiscal",
+      "editor": "textfield"
     }
   },
-  "required": ["nombreEmpresa", "cifEmpresa"]
+  "required": ["nombreEmpresa", "cif"]
 }
