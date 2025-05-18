@@ -24,14 +24,13 @@ Actor.main(async () => {
             await botonAceptarCookies.click().catch(() => {});
         }
 
-        // Esperar el iframe que contiene el formulario
-        const allIframes = await page.$$('iframe');
-        if (allIframes.length === 0) throw new Error('No se encontraron iframes en la página');
+        // Esperar explícitamente al iframe con ID que empieza por p_p_
+        const iframeHandle = await page.waitForSelector('iframe[id^="p_p_"]', { timeout: 30000 });
+        const formularioFrame = await iframeHandle.contentFrame();
 
-        const formularioFrame = await allIframes[0].contentFrame();
         if (!formularioFrame) throw new Error('No se pudo acceder al iframe del formulario');
 
-        // Esperar y rellenar campos dentro del iframe
+        // Rellenar formulario
         await formularioFrame.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
         await formularioFrame.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
 
@@ -42,7 +41,7 @@ Actor.main(async () => {
         await botonBuscar.scrollIntoViewIfNeeded();
         await botonBuscar.click();
 
-        // Esperar a que aparezca el resultado o mensaje
+        // Esperar resultado
         await formularioFrame.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
 
         const contenidoHTML = await formularioFrame.content();
