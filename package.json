@@ -1,0 +1,13 @@
+{
+  "name": "apify-concursal",
+  "version": "1.0.0",
+  "description": "Scraper para publicidadconcursal.es usando Playwright",
+  "type": "module",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "apify": "^3.4.1",
+    "playwright": "^1.52.0"
+  }
+}

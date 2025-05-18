@@ -1,0 +1,18 @@
+{
+  "title": "Parámetros de búsqueda en publicidadconcursal.es",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "nombreEmpresa": {
+      "title": "Nombre de la empresa",
+      "type": "string",
+      "editor": "textfield"
+    },
+    "cifEmpresa": {
+      "title": "CIF de la empresa (opcional)",
+      "type": "string",
+      "editor": "textfield"
+    }
+  },
+  "required": ["nombreEmpresa"]
+}
