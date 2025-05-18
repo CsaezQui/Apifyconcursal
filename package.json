@@ -1,14 +1,8 @@
 {
-  "name": "apify-playwright-concursal",
+  "name": "apify-concursal",
   "version": "1.0.0",
-  "description": "Scraping con Playwright para la web de publicidad concursal",
   "dependencies": {
-    "apify": "^3.4.1",
-    "playwright": "^1.43.1"
-  },
-  "scripts": {
-    "start": "node main.js"
-  },
-  "author": "Carlos",
-  "license": "MIT"
+    "apify": "^3.0.0",
+    "playwright": "^1.42.1"
+  }
 }
