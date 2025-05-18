@@ -18,27 +18,22 @@ Apify.main(async () => {
             timeout: 60000
         });
 
-        // Cerrar el banner de cookies si aparece
         const botonAceptarCookies = await page.locator('#klaro button[title="Aceptar"]').first();
         if (await botonAceptarCookies.isVisible()) {
             console.log('Cerrando banner de cookies...');
             await botonAceptarCookies.click();
         }
 
-        // Esperar los campos
         await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
         await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
 
-        // Rellenar campos
         await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
         await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
 
-        // Hacer clic en el botón de búsqueda
         const botonBuscar = page.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
         await botonBuscar.scrollIntoViewIfNeeded();
         await botonBuscar.click();
 
-        // Esperar los resultados
         await page.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
 
         console.log('Consulta realizada correctamente');
