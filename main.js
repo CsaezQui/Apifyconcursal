@@ -33,8 +33,8 @@ try {
         await page.fill('input[placeholder*="NIF"]', cif);
     }
 
-    // Hacer clic en el botón de búsqueda
-    await page.locator('button:has-text("Buscar")').click();
+    // Click en el botón de búsqueda correcto (por ID específico)
+    await page.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search').click();
 
     // Esperar a los resultados
     await page.waitForSelector('.resultado-bloque', { timeout: 60000 });
