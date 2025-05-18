@@ -14,20 +14,20 @@ Actor.main(async () => {
 
     try {
         await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
-            waitUntil: 'domcontentloaded',
+            waitUntil: 'load',
             timeout: 60000
         });
 
-        // Espera extra para asegurar carga total del portal
-        await page.waitForTimeout(3000);
-
+        // Intentar aceptar cookies si aparecen
         const botonAceptarCookies = page.locator('#klaro button[title="Aceptar"]');
-        if (await botonAceptarCookies.isVisible({ timeout: 2000 })) {
-            await botonAceptarCookies.click();
+        if (await botonAceptarCookies.isVisible({ timeout: 2000 }).catch(() => false)) {
+            await botonAceptarCookies.click().catch(() => {});
         }
 
-        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 60000 });
-        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 60000 });
+        // Esperar de forma activa a que cargue el campo de nombre (esto garantiza que esté visible y disponible)
+        await page.waitForFunction(() => {
+            return document.querySelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre') !== null;
+        }, { timeout: 60000 });
 
         await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
         await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
@@ -36,12 +36,25 @@ Actor.main(async () => {
         await botonBuscar.scrollIntoViewIfNeeded();
         await botonBuscar.click();
 
-        await page.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 60000 });
+        // Esperar al resultado
+        await page.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
 
-        await Actor.setValue('OUTPUT', {
-            ok: true,
-            mensaje: 'Consulta realizada correctamente'
-        });
+        const contenidoResultado = await page.content();
+        const noHayDatos = contenidoResultado.includes('Ningún dato disponible en esta tabla');
+
+        if (noHayDatos) {
+            await Actor.setValue('OUTPUT', {
+                ok: true,
+                resultado: 'no_concursal',
+                mensaje: 'La empresa no figura en situación concursal'
+            });
+        } else {
+            await Actor.setValue('OUTPUT', {
+                ok: true,
+                resultado: 'concursal',
+                mensaje: 'La empresa figura con publicaciones concursales'
+            });
+        }
 
     } catch (error) {
         await Actor.setValue('OUTPUT', {
