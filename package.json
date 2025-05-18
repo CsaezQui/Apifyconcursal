@@ -1,8 +1,12 @@
 {
   "name": "apify-concursal",
   "version": "1.0.0",
+  "description": "Consulta de publicidad concursal usando Playwright en Apify",
+  "scripts": {
+    "start": "node main.js"
+  },
   "dependencies": {
     "apify": "^3.0.0",
-    "playwright": "^1.42.1"
+    "playwright": "^1.44.0"
   }
 }
