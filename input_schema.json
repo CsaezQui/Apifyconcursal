@@ -1,0 +1,8 @@
+{
+  "title": "Scraper concursal",
+  "description": "Scraper que carga la web del Registro Público Concursal",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {},
+  "required": []
+}

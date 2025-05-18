@@ -1,0 +1,9 @@
+{
+  "name": "apify-playwright-actor",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "apify": "^3.4.1",
+    "playwright": "^1.43.1"
+  }
+}
