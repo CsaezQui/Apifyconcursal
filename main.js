@@ -1,8 +1,8 @@
-const Apify = require('apify');
+const { Actor } = require('apify');
 const { chromium } = require('playwright');
 
-Apify.main(async () => {
-    const input = await Apify.getInput();
+Actor.main(async () => {
+    const input = await Actor.getInput();
     const nombreEmpresa = input.nombreEmpresa;
     const documentoIdentificativo = input.documentoIdentificativo;
 
@@ -18,14 +18,13 @@ Apify.main(async () => {
             timeout: 60000
         });
 
-        const botonAceptarCookies = await page.locator('#klaro button[title="Aceptar"]').first();
-        if (await botonAceptarCookies.isVisible()) {
-            console.log('Cerrando banner de cookies...');
+        const botonAceptarCookies = page.locator('#klaro button[title="Aceptar"]');
+        if (await botonAceptarCookies.isVisible({ timeout: 2000 })) {
             await botonAceptarCookies.click();
         }
 
-        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
-        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
+        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre');
+        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo');
 
         await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
         await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
@@ -36,15 +35,13 @@ Apify.main(async () => {
 
         await page.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
 
-        console.log('Consulta realizada correctamente');
-        await Apify.setValue('OUTPUT', {
+        await Actor.setValue('OUTPUT', {
             ok: true,
             mensaje: 'Consulta realizada correctamente'
         });
 
     } catch (error) {
-        console.error('Error detectado:', error);
-        await Apify.setValue('OUTPUT', {
+        await Actor.setValue('OUTPUT', {
             ok: false,
             error: error.message,
             stack: error.stack
