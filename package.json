@@ -1,7 +1,11 @@
 {
-  "name": "apify-concursal",
+  "name": "apifyconcursal",
   "version": "1.0.0",
+  "description": "Consulta concursal automática",
   "type": "module",
+  "scripts": {
+    "start": "node main.js"
+  },
   "dependencies": {
     "apify": "^3.4.1",
     "playwright": "^1.52.0"
