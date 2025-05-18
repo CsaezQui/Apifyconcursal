@@ -14,32 +14,36 @@ Actor.main(async () => {
 
     try {
         await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
-            waitUntil: 'load',
+            waitUntil: 'domcontentloaded',
             timeout: 60000
         });
 
-        // Intentar aceptar cookies si aparecen
+        // Aceptar cookies si aparecen
         const botonAceptarCookies = page.locator('#klaro button[title="Aceptar"]');
         if (await botonAceptarCookies.isVisible({ timeout: 2000 }).catch(() => false)) {
             await botonAceptarCookies.click().catch(() => {});
         }
 
-        // Esperar de forma activa a que cargue el campo de nombre (esto garantiza que esté visible y disponible)
-        await page.waitForFunction(() => {
-            return document.querySelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre') !== null;
-        }, { timeout: 60000 });
+        // Esperar a que se cargue el iframe y acceder a él
+        const frame = await page.frameLocator('iframe[title="Contenido"]').frame();
 
-        await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
-        await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
+        // Esperar los campos del formulario dentro del iframe
+        await frame.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
+        await frame.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
 
-        const botonBuscar = page.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
+        // Rellenar el formulario
+        await frame.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
+        await frame.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
+
+        // Hacer clic en el botón de búsqueda
+        const botonBuscar = frame.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
         await botonBuscar.scrollIntoViewIfNeeded();
         await botonBuscar.click();
 
         // Esperar al resultado
-        await page.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
+        await frame.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
 
-        const contenidoResultado = await page.content();
+        const contenidoResultado = await frame.content();
         const noHayDatos = contenidoResultado.includes('Ningún dato disponible en esta tabla');
 
         if (noHayDatos) {
