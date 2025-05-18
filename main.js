@@ -18,33 +18,34 @@ Actor.main(async () => {
             timeout: 60000
         });
 
-        // Aceptar cookies si aparecen
+        // Aceptar cookies si aparece Klaro
         const botonAceptarCookies = page.locator('#klaro button[title="Aceptar"]');
-        if (await botonAceptarCookies.isVisible({ timeout: 2000 }).catch(() => false)) {
+        if (await botonAceptarCookies.isVisible({ timeout: 3000 }).catch(() => false)) {
             await botonAceptarCookies.click().catch(() => {});
         }
 
-        // Esperar a que se cargue el iframe y acceder a él
-        const frame = await page.frameLocator('iframe[title="Contenido"]').frame();
+        // Esperar a que cargue el iframe
+        const iframeElement = await page.waitForSelector('iframe[title="Contenido"]', { timeout: 10000 });
+        const frame = await iframeElement.contentFrame();
 
-        // Esperar los campos del formulario dentro del iframe
+        if (!frame) throw new Error('No se pudo acceder al iframe de contenido');
+
+        // Esperar y rellenar campos dentro del iframe
         await frame.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
-        await frame.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
-
-        // Rellenar el formulario
         await frame.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
+
+        await frame.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
         await frame.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
 
-        // Hacer clic en el botón de búsqueda
         const botonBuscar = frame.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
         await botonBuscar.scrollIntoViewIfNeeded();
         await botonBuscar.click();
 
-        // Esperar al resultado
+        // Esperar a que aparezcan resultados o mensaje
         await frame.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
 
-        const contenidoResultado = await frame.content();
-        const noHayDatos = contenidoResultado.includes('Ningún dato disponible en esta tabla');
+        const contenidoHTML = await frame.content();
+        const noHayDatos = contenidoHTML.includes('Ningún dato disponible en esta tabla');
 
         if (noHayDatos) {
             await Actor.setValue('OUTPUT', {
