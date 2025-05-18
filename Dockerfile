@@ -1,10 +1,13 @@
 FROM mcr.microsoft.com/playwright:v1.52.0-jammy
 
-# Copiamos todos los archivos al contenedor
-COPY . ./
+# Establece el directorio de trabajo
+WORKDIR /usr/src/app
 
-# Instalamos las dependencias necesarias (solo producción)
+# Copia los archivos necesarios
+COPY . .
+
+# Instala las dependencias de producción
 RUN npm install --omit=dev
 
-# Comando por defecto
+# Define el comando de arranque
 CMD ["node", "main.js"]
