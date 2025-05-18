@@ -16,18 +16,15 @@ try {
     await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { timeout: 60000 });
     console.log('Página cargada correctamente');
 
-    // Esperamos y rellenamos los campos
     await page.waitForSelector('input[placeholder="Introduzca nombre"]', { timeout: 60000 });
     await page.waitForSelector('input[placeholder="Introduzca nif / cif / nie /pasaporte"]', { timeout: 60000 });
 
     await page.fill('input[placeholder="Introduzca nombre"]', nombreEmpresa);
     await page.fill('input[placeholder="Introduzca nif / cif / nie /pasaporte"]', cifEmpresa);
 
-    // Pulsamos en el botón de buscar
     await page.click('button:has-text("Buscar")');
 
-    // Esperamos los resultados o un mensaje de advertencia
-    await page.waitForTimeout(5000); // Espera básica para que cargue algo
+    await page.waitForTimeout(5000);
     const html = await page.content();
 
     await Actor.setValue('OUTPUT', {
