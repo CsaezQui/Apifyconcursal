@@ -1,16 +1,17 @@
 {
-  "title": "Parámetros de búsqueda en publicidadconcursal.es",
+  "title": "Consulta concursal",
   "type": "object",
   "schemaVersion": 1,
   "properties": {
     "nombreEmpresa": {
+      "type": "string",
       "title": "Nombre de la empresa",
-      "type": "string",
-      "editor": "textfield"
+      "description": "Nombre de la empresa que deseas consultar"
     },
-    "cifEmpresa": {
-      "title": "CIF de la empresa (opcional)",
+    "cif": {
       "type": "string",
+      "title": "CIF de la empresa",
+      "description": "CIF de la empresa (opcional)",
       "editor": "textfield"
     }
   },
