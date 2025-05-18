@@ -11,13 +11,17 @@ console.log(`Buscando datos para empresa: ${nombreEmpresa}, CIF: ${cif}`);
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
 
-await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { waitUntil: 'domcontentloaded' });
+await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { waitUntil: 'networkidle' });
 
+await page.waitForSelector('#nombre', { timeout: 60000 });
 await page.fill('#nombre', nombreEmpresa);
-await page.fill('#cif', cif);
-await page.click('#btnBuscar');
 
-await page.waitForSelector('#tablaResultados tbody tr', { timeout: 10000 });
+if (cif) {
+    await page.fill('#cif', cif);
+}
+
+await page.click('#btnBuscar');
+await page.waitForSelector('#tablaResultados tbody tr', { timeout: 60000 });
 
 const resultado = await page.evaluate(() => {
     const fila = document.querySelector('#tablaResultados tbody tr');
