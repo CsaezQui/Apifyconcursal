@@ -1,8 +1,8 @@
 {
   "name": "apifyconcursal",
   "version": "1.0.0",
-  "description": "Consulta concursal automática",
-  "type": "module",
+  "description": "Scraper para publicidadconcursal.es",
+  "main": "main.js",
   "scripts": {
     "start": "node main.js"
   },
