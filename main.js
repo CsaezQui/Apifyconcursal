@@ -1,27 +1,40 @@
 import { Actor } from 'apify';
 import { chromium } from 'playwright';
 
-await Actor.init();
+Actor.main(async () => {
+    const input = await Actor.getInput();
+    const { nombreEmpresa, cifEmpresa } = input;
 
-try {
-    console.log('Lanzando navegador...');
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
-    await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
-        waitUntil: 'networkidle',
-    });
 
-    console.log('Página cargada correctamente');
-    await Actor.setValue('OUTPUT', { ok: true, mensaje: 'Página cargada correctamente' });
+    try {
+        await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { waitUntil: 'domcontentloaded' });
 
-    await browser.close();
-} catch (error) {
-    console.error('Error detectado:', error);
-    await Actor.setValue('OUTPUT', {
-        ok: false,
-        error: error.message,
-        stack: error.stack,
-    });
-}
+        await page.fill('#denominacion', nombreEmpresa);
+        await page.fill('#cif', cifEmpresa);
 
-await Actor.exit();
+        await page.click('button:has-text("Buscar")');
+        await page.waitForSelector('table', { timeout: 10000 });
+
+        const resultados = await page.$$eval('table tbody tr', rows =>
+            rows.map(row => {
+                const cells = Array.from(row.querySelectorAll('td'));
+                return cells.map(cell => cell.textContent.trim());
+            })
+        );
+
+        await Actor.setValue('OUTPUT', {
+            ok: true,
+            resultados,
+        });
+
+    } catch (error) {
+        await Actor.setValue('OUTPUT', {
+            ok: false,
+            error: error.message,
+        });
+    } finally {
+        await browser.close();
+    }
+});
