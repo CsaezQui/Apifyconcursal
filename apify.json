@@ -1,6 +1,7 @@
 {
-  "name": "apify-concursal",
-  "version": "1.0",
+  "defaultActorId": "carlos.saez.quintero/Apify-concursal",
   "buildTag": "latest",
-  "env": null
+  "env": {
+    "APIFY_DEFAULT_KEY_VALUE_STORE_ID": "default"
+  }
 }
