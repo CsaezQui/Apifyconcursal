@@ -1,20 +1,17 @@
 {
   "schemaVersion": 1,
-  "title": "Consulta Concursal",
   "type": "object",
   "properties": {
     "nombreEmpresa": {
+      "title": "Nombre o razón social",
       "type": "string",
-      "title": "Nombre de la empresa",
-      "description": "Introduce el nombre o parte del nombre del deudor/inhabilitado/administrador concursal",
-      "editor": "textfield"
+      "description": "Nombre completo de la empresa a buscar"
     },
-    "cif": {
+    "cifEmpresa": {
+      "title": "CIF/NIF/NIE",
       "type": "string",
-      "title": "Documento identificativo",
-      "description": "Introduce NIF/CIF o número de pasaporte",
-      "editor": "textfield"
+      "description": "Identificador fiscal de la empresa"
     }
   },
-  "required": ["nombreEmpresa", "cif"]
+  "required": ["nombreEmpresa", "cifEmpresa"]
 }
