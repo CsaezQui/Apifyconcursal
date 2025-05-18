@@ -1,9 +1,12 @@
 {
-  "name": "apify-playwright-actor",
+  "name": "apify-concursal",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "start": "node main.js"
+  },
   "dependencies": {
-    "apify": "^3.4.1",
-    "playwright": "^1.43.1"
+    "apify": "^3.0.0",
+    "playwright": "^1.52.0"
   }
 }
