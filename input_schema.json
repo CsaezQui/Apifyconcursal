@@ -1,12 +1,19 @@
 {
-  "title": "Input schema for consulta concursal",
+  "title": "Parámetros de entrada",
   "type": "object",
   "schemaVersion": 1,
   "properties": {
     "nombreEmpresa": {
       "title": "Nombre de la empresa",
       "type": "string",
-      "description": "Nombre de la empresa a consultar"
+      "description": "Nombre exacto de la empresa a consultar en publicidadconcursal.es",
+      "editor": "textfield"
+    },
+    "cif": {
+      "title": "CIF",
+      "type": "string",
+      "description": "CIF de la empresa (opcional, si se desea afinar la búsqueda)",
+      "editor": "textfield"
     }
   },
   "required": ["nombreEmpresa"]
