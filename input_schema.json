@@ -1,20 +1,21 @@
 {
-  "title": "Consulta concursal",
+  "title": "Consulta Publicidad Concursal",
+  "description": "Parámetros de entrada para la consulta de publicidad concursal",
   "type": "object",
   "schemaVersion": 1,
   "properties": {
     "nombreEmpresa": {
-      "title": "Nombre de la empresa",
+      "title": "Nombre del Deudor / Inhabilitado / Administrador concursal",
       "type": "string",
-      "description": "Nombre completo del deudor/empresa a buscar",
+      "description": "Introduce el nombre completo o parcial",
       "editor": "textfield"
     },
-    "cif": {
-      "title": "CIF/NIF",
+    "documentoIdentificativo": {
+      "title": "Documento identificativo (NIF/CIF/Número de pasaporte)",
       "type": "string",
-      "description": "Número de identificación fiscal",
+      "description": "Introduce el NIF, CIF o número de pasaporte",
       "editor": "textfield"
     }
   },
-  "required": ["nombreEmpresa", "cif"]
+  "required": []
 }
