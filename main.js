@@ -1,56 +1,49 @@
 import { Actor } from 'apify';
-import playwright from 'playwright';
+import { chromium } from 'playwright';
 
-await Actor.main(async () => {
-    const input = await Actor.getInput();
-    const { nombreEmpresa, cif } = input;
-    const browser = await playwright.chromium.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+await Actor.init();
+
+const input = await Actor.getInput();
+const nombreEmpresa = input.nombreEmpresa;
+const cifEmpresa = input.cifEmpresa;
+
+console.log(`Buscando datos para empresa: ${nombreEmpresa}, CIF: ${cifEmpresa}`);
+
+const browser = await chromium.launch({ headless: true });
+const page = await browser.newPage();
+
+try {
+    await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { timeout: 60000 });
+    console.log('Página cargada correctamente');
+
+    // Esperamos y rellenamos los campos
+    await page.waitForSelector('input[placeholder="Introduzca nombre"]', { timeout: 60000 });
+    await page.waitForSelector('input[placeholder="Introduzca nif / cif / nie /pasaporte"]', { timeout: 60000 });
+
+    await page.fill('input[placeholder="Introduzca nombre"]', nombreEmpresa);
+    await page.fill('input[placeholder="Introduzca nif / cif / nie /pasaporte"]', cifEmpresa);
+
+    // Pulsamos en el botón de buscar
+    await page.click('button:has-text("Buscar")');
+
+    // Esperamos los resultados o un mensaje de advertencia
+    await page.waitForTimeout(5000); // Espera básica para que cargue algo
+    const html = await page.content();
+
+    await Actor.setValue('OUTPUT', {
+        ok: true,
+        mensaje: 'Consulta enviada. Revisa el HTML si quieres comprobar resultados.',
+        html: html
     });
-    const page = await browser.newPage();
-    console.log(`Buscando datos para empresa: ${nombreEmpresa}, CIF: ${cif}`);
 
-    try {
-        await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
-            waitUntil: 'networkidle',
-            timeout: 60000,
-        });
+} catch (error) {
+    console.error('Error detectado:', error);
+    await Actor.setValue('OUTPUT', {
+        ok: false,
+        error: error.message,
+        stack: error.stack
+    });
+}
 
-        // Rellenar campos
-        await page.fill('input[placeholder*="nombre"]', nombreEmpresa);
-        await page.fill('input[placeholder*="NIF"]', cif);
-
-        // Pulsar botón Buscar
-        await Promise.all([
-            page.click('button:has-text("Buscar")'),
-            page.waitForResponse(resp => resp.url().includes('buscarConcursos') && resp.status() === 200, { timeout: 60000 }),
-        ]);
-
-        // Extraer resultados
-        const rows = await page.$$('.tablaResultados tbody tr');
-        if (rows.length === 0) {
-            await Actor.setValue('OUTPUT', { ok: false, mensaje: 'No hay situación concursal' });
-        } else {
-            const datos = await page.$$eval('.tablaResultados tbody tr', trs =>
-                trs.map(tr => {
-                    const cells = Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim());
-                    return {
-                        nombre: cells[0],
-                        cif: cells[1],
-                        juzgado: cells[2],
-                        procedimiento: cells[3],
-                        estado: cells[4],
-                        fecha: cells[5],
-                    };
-                })
-            );
-            await Actor.setValue('OUTPUT', { ok: true, concursos: datos });
-        }
-    } catch (err) {
-        console.error('Error detectado:', err);
-        await Actor.setValue('OUTPUT', { ok: false, error: err.message });
-    } finally {
-        await browser.close();
-    }
-});
+await browser.close();
+await Actor.exit();
