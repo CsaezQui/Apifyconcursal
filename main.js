@@ -1,67 +1,67 @@
-const { Actor } = require('apify');
-const { chromium } = require('playwright');
+import { Actor } from 'apify';
+import { chromium } from 'playwright';
 
-Actor.main(async () => {
-    const input = await Actor.getInput();
-    const nombreEmpresa = input.nombreEmpresa;
-    const documentoIdentificativo = input.documentoIdentificativo;
+await Actor.init();
 
-    console.log(`Buscando datos para empresa: ${nombreEmpresa}, CIF: ${documentoIdentificativo}`);
+const input = await Actor.getInput();
+// Puedes pasar los datos desde el INPUT del actor en Apify
+const nombre = input.nombre || 'SERVICIOS INTEGRALES MUGRAFA';
+const cif = input.cif || 'B45857430';
 
-    const browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext();
-    const page = await context.newPage();
+const browser = await chromium.launch({ headless: true });
+const page = await browser.newPage();
 
-    try {
-        await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
-            waitUntil: 'domcontentloaded',
-            timeout: 60000
-        });
+try {
+    await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
+        waitUntil: 'domcontentloaded',
+    });
 
-        const botonAceptarCookies = page.locator('#klaro button[title="Aceptar"]');
-        if (await botonAceptarCookies.isVisible({ timeout: 3000 })) {
-            await botonAceptarCookies.click();
-        }
+    // Marcar la Sección I (obligatoria)
+    const seccionCheckbox = '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_section1';
+    await page.waitForSelector(seccionCheckbox, { timeout: 10000 });
+    await page.check(seccionCheckbox);
 
-        // Esperamos al iframe principal
-        const iframeLocator = page.frameLocator('iframe[title="Contenido"]');
-        await page.waitForSelector('iframe[title="Contenido"]', { timeout: 10000 });
+    // Rellenar nombre
+    const nombreSelector = '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_afectado';
+    await page.fill(nombreSelector, nombre);
 
-        // Rellenamos los campos dentro del iframe
-        await iframeLocator.locator('input[id$="nombre"]').fill(nombreEmpresa, { timeout: 10000 });
-        await iframeLocator.locator('input[id$="documentoIdentificativo"]').fill(documentoIdentificativo, { timeout: 10000 });
+    // Rellenar CIF
+    const cifSelector = '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_identificador';
+    await page.fill(cifSelector, cif);
 
-        // Clic en el botón de búsqueda
-        const botonBuscar = iframeLocator.locator('button[id$="search"]');
-        await botonBuscar.scrollIntoViewIfNeeded();
-        await botonBuscar.click();
+    // Pulsar buscar
+    const botonBuscar = '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search';
+    await page.click(botonBuscar);
 
-        // Esperamos resultados o mensaje de tabla vacía
-        await iframeLocator.locator('.resultado-busqueda, .dataTables_empty, .portlet-msg-info').waitFor({ timeout: 30000 });
+    // Esperar resultados
+    await page.waitForSelector('.dataTables_wrapper', { timeout: 10000 });
 
-        const hayMensajeSinDatos = await iframeLocator.locator('td.dataTables_empty').isVisible().catch(() => false);
+    // Comprobar si hay resultados o mensaje de vacío
+    const sinResultados = await page.locator('.dataTables_empty').isVisible();
 
-        if (hayMensajeSinDatos) {
-            await Actor.setValue('OUTPUT', {
-                ok: true,
-                resultado: 'no_concursal',
-                mensaje: 'La empresa no figura en situación concursal'
-            });
-        } else {
-            await Actor.setValue('OUTPUT', {
-                ok: true,
-                resultado: 'concursal',
-                mensaje: 'La empresa figura con publicaciones concursales'
-            });
-        }
+    if (sinResultados) {
+        console.log('No hay resultados para la empresa.');
+        await Actor.pushData({ resultado: 'Sin resultados', nombre, cif });
+    } else {
+        const filas = await page.$$eval('.dataTable tbody tr', rows =>
+            rows.map(row => {
+                const columnas = row.querySelectorAll('td');
+                return {
+                    fecha: columnas[0]?.innerText.trim(),
+                    juzgado: columnas[1]?.innerText.trim(),
+                    tipo: columnas[2]?.innerText.trim(),
+                };
+            })
+        );
 
-    } catch (error) {
-        await Actor.setValue('OUTPUT', {
-            ok: false,
-            error: error.message,
-            stack: error.stack
-        });
-    } finally {
-        await browser.close();
+        console.log(`Resultados encontrados: ${filas.length}`);
+        await Actor.pushData(filas);
     }
-});
+
+} catch (error) {
+    console.error('Error durante la ejecución:', error.message);
+    await Actor.pushData({ error: error.message, nombre, cif });
+}
+
+await browser.close();
+await Actor.exit();
