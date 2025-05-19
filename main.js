@@ -1,67 +1,47 @@
 import { Actor } from 'apify';
-import { chromium } from 'playwright';
+import { chromium } from 'playwright'; // Usa 'firefox' o 'webkit' si lo prefieres
 
 await Actor.init();
 
 const input = await Actor.getInput();
-// Puedes pasar los datos desde el INPUT del actor en Apify
-const nombre = input.nombre || 'SERVICIOS INTEGRALES MUGRAFA';
-const cif = input.cif || 'B45857430';
+const { nombre, cif } = input;
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
 
 try {
-    await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
-        waitUntil: 'domcontentloaded',
-    });
+    await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { waitUntil: 'load', timeout: 60000 });
 
-    // Marcar la Sección I (obligatoria)
-    const seccionCheckbox = '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_section1';
-    await page.waitForSelector(seccionCheckbox, { timeout: 10000 });
-    await page.check(seccionCheckbox);
+    await page.fill('#nombre', nombre);
+    await page.fill('#documentoIdentificativo', cif);
 
-    // Rellenar nombre
-    const nombreSelector = '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_afectado';
-    await page.fill(nombreSelector, nombre);
+    await page.click('#botonBuscar');
 
-    // Rellenar CIF
-    const cifSelector = '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_identificador';
-    await page.fill(cifSelector, cif);
+    // Espera a que se cargue el contenedor de resultados sin exigir visibilidad completa
+    await page.waitForSelector('.dataTables_wrapper', { state: 'attached', timeout: 20000 });
+    console.log("Tabla localizada correctamente");
 
-    // Pulsar buscar
-    const botonBuscar = '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search';
-    await page.click(botonBuscar);
+    const rows = await page.$$('.dataTables_wrapper table tbody tr');
 
-    // Esperar resultados
-    await page.waitForSelector('.dataTables_wrapper', { timeout: 10000 });
+    let resultados = [];
 
-    // Comprobar si hay resultados o mensaje de vacío
-    const sinResultados = await page.locator('.dataTables_empty').isVisible();
-
-    if (sinResultados) {
-        console.log('No hay resultados para la empresa.');
-        await Actor.pushData({ resultado: 'Sin resultados', nombre, cif });
-    } else {
-        const filas = await page.$$eval('.dataTable tbody tr', rows =>
-            rows.map(row => {
-                const columnas = row.querySelectorAll('td');
-                return {
-                    fecha: columnas[0]?.innerText.trim(),
-                    juzgado: columnas[1]?.innerText.trim(),
-                    tipo: columnas[2]?.innerText.trim(),
-                };
-            })
-        );
-
-        console.log(`Resultados encontrados: ${filas.length}`);
-        await Actor.pushData(filas);
+    for (const row of rows) {
+        const columnas = await row.$$('td');
+        const datos = await Promise.all(columnas.map(async col => (await col.textContent())?.trim()));
+        resultados.push(datos);
     }
 
-} catch (error) {
-    console.error('Error durante la ejecución:', error.message);
-    await Actor.pushData({ error: error.message, nombre, cif });
-}
+    await Actor.pushData({
+        nombre,
+        cif,
+        resultados
+    });
 
-await browser.close();
-await Actor.exit();
+} catch (error) {
+    console.error("Error durante la ejecución:", error);
+    throw error;
+
+} finally {
+    await browser.close();
+    await Actor.exit();
+}
