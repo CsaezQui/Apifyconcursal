@@ -1,0 +1,11 @@
+{
+  "name": "apify-concursal",
+  "version": "1.0.0",
+  "description": "Actor para consultar publicidad concursal",
+  "main": "main.js",
+  "type": "commonjs",
+  "dependencies": {
+    "apify": "^3.4.2",
+    "playwright": "^1.52.0"
+  }
+}
