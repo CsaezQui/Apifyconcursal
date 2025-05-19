@@ -1,0 +1,20 @@
+{
+  "title": "Publicidad Concursal Checker",
+  "description": "Consulta si una empresa figura en el Registro Público Concursal por nombre y/o CIF",
+  "instructions": "Introduce un nombre y/o CIF para consultar su estado concursal",
+  "input": {
+    "title": "Parámetros de búsqueda",
+    "type": "object",
+    "properties": {
+      "nombre": {
+        "title": "Nombre de la empresa",
+        "type": "string"
+      },
+      "cif": {
+        "title": "CIF de la empresa",
+        "type": "string"
+      }
+    },
+    "required": []
+  }
+}
