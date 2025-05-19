@@ -1,7 +1,7 @@
 {
   "name": "apify-concursal",
   "version": "1.0.0",
-  "description": "Actor to scrape publicidadconcursal.es",
+  "description": "Actor para consultar publicidad concursal",
   "main": "main.js",
   "type": "commonjs",
   "scripts": {
