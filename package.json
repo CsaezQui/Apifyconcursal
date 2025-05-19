@@ -1,15 +1,12 @@
 {
-  "name": "consulta-publicidad-concursal",
-  "version": "0.0.1",
-  "description": "Actor para consultar el Registro Público Concursal y extraer nombre y CIF de empresas.",
+  "name": "mi-actor-apify",
+  "version": "1.0.0",
+  "description": "Mi actor de Apify",
   "main": "main.js",
- "scripts": {
-  "start": "node main.js"
-},
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "apify": "^3.0.0",
-    "dotenv": "^16.0.0"
+  "scripts": {
+    "start": "apify run"
+  },
+  "devDependencies": {
+    "apify-cli": "^2.0.0"
   }
 }
