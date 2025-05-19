@@ -6,6 +6,6 @@
     "start": "apify run"
   },
   "devDependencies": {
-    "apify-cli": "^2.0.0"
+    "apify-cli": "^1.2.9"
   }
 }
