@@ -18,13 +18,11 @@ Actor.main(async () => {
             timeout: 60000
         });
 
-        // Aceptar cookies si están presentes
         const botonAceptarCookies = page.locator('#klaro button[title="Aceptar"]');
-        if (await botonAceptarCookies.isVisible({ timeout: 2000 }).catch(() => false)) {
+        if (await botonAceptarCookies.isVisible({ timeout: 2000 })) {
             await botonAceptarCookies.click();
         }
 
-        // Esperar los campos e introducir los datos
         await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
         await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
 
@@ -35,19 +33,26 @@ Actor.main(async () => {
         await botonBuscar.scrollIntoViewIfNeeded();
         await botonBuscar.click();
 
-        // Esperar al resultado de búsqueda
-        await page.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
+        // Esperamos a que aparezca el contenedor de resultados
+        await page.waitForSelector('div[id*="resultadoBusquedaConcursal"]', { timeout: 30000 });
 
-        const contenido = await page.content();
-        const hayDatos = !contenido.includes('Ningún dato disponible en esta tabla');
+        // Leemos el contenido visible del contenedor
+        const contenidoResultado = await page.textContent('div[id*="resultadoBusquedaConcursal"]');
+        const noHayDatos = contenidoResultado.includes('Ningún dato disponible en esta tabla');
 
-        await Actor.setValue('OUTPUT', {
-            ok: true,
-            resultado: hayDatos ? 'concursal' : 'no_concursal',
-            mensaje: hayDatos
-                ? 'La empresa figura con publicaciones concursales'
-                : 'La empresa no figura en situación concursal'
-        });
+        if (noHayDatos) {
+            await Actor.setValue('OUTPUT', {
+                ok: true,
+                resultado: 'no_concursal',
+                mensaje: 'La empresa no figura en situación concursal'
+            });
+        } else {
+            await Actor.setValue('OUTPUT', {
+                ok: true,
+                resultado: 'concursal',
+                mensaje: 'La empresa figura con publicaciones concursales'
+            });
+        }
 
     } catch (error) {
         await Actor.setValue('OUTPUT', {
