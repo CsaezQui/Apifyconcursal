@@ -2,71 +2,82 @@ const { Actor } = require('apify');
 const { chromium } = require('playwright');
 
 Actor.main(async () => {
-    // Leemos input
     const input = await Actor.getInput();
-    const nombreEmpresa = input.nombreEmpresa;
-    const documentoIdentificativo = input.documentoIdentificativo;
+    const nombre = input.nombreEmpresa;
+    const docId = input.documentoIdentificativo;
 
-    console.log(`Buscando datos para empresa: ${nombreEmpresa}, CIF: ${documentoIdentificativo}`);
+    console.log(`Buscando: nombre="${nombre}", doc="${docId}"`);
 
     const browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext();
-    const page = await context.newPage();
+    const page = await browser.newPage();
 
     try {
-        // Navegamos a la página
+        // 1) Accede a la página
         await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
             waitUntil: 'domcontentloaded',
             timeout: 60000,
         });
 
-        // Aceptar cookies si aparece el banner
-        const botonCookies = page.locator('#klaro button[title="Aceptar"]');
-        if (await botonCookies.isVisible({ timeout: 3000 })) {
-            await botonCookies.click();
+        // 2) Aceptar cookies si aparece
+        const btnCookies = page.locator('#klaro button[title="Aceptar"]');
+        if (await btnCookies.isVisible({ timeout: 2000 })) {
+            await btnCookies.click();
         }
 
-        // Esperamos los campos de búsqueda
-        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_afectado', { timeout: 60000 });
-        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_identificador', { timeout: 60000 });
+        // 3) Rellenar campos de búsqueda
+        await page.waitForSelector(
+            '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_afectado',
+            { timeout: 15000 }
+        );
+        await page.fill(
+            '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_afectado',
+            nombre
+        );
+        await page.fill(
+            '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_identificador',
+            docId
+        );
 
-        // Rellenamos nombre/CIF
-        await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_afectado', nombreEmpresa || '');
-        await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_identificador', documentoIdentificativo || '');
+        // 4) Pulsar “Buscar”
+        const btnBuscar = page.locator(
+            '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search'
+        );
+        await btnBuscar.scrollIntoViewIfNeeded();
+        await btnBuscar.click();
 
-        // Hacemos scroll y clic en Buscar
-        const botonBuscar = page.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
-        await botonBuscar.scrollIntoViewIfNeeded();
-        await botonBuscar.click();
+        // 5) Esperar resultado: tabla o mensaje “no datos”
+        await page.waitForSelector(
+            '.dataTables_wrapper, .portlet-msg-info',
+            { timeout: 30000 }
+        );
 
-        // Esperamos que cargue el resultado (tabla o mensaje de “no hay datos”)
-        await page.waitForSelector('.dataTables_wrapper, .portlet-msg-info', { timeout: 30000 });
-
-        // Comprobamos si hay tabla vacía
-        const hayTablaVacia = await page.locator('td.dataTables_empty').count() > 0;
-
-        if (hayTablaVacia) {
-            // No hay resultados
-            await Actor.setValue('OUTPUT', {
+        // 6) Determinar si hay datos
+        const textoTabla = await page.textContent(
+            'td.dataTables_empty'
+        ).catch(() => '');
+        let output;
+        if (textoTabla && textoTabla.includes('Ningún dato disponible')) {
+            output = {
                 ok: true,
                 resultado: 'no_concursal',
                 mensaje: 'La empresa no figura en situación concursal',
-            });
+            };
         } else {
-            // Hay resultados (concursal)
-            await Actor.setValue('OUTPUT', {
+            output = {
                 ok: true,
                 resultado: 'concursal',
                 mensaje: 'La empresa figura con publicaciones concursales',
-            });
+            };
         }
 
-    } catch (error) {
-        console.error('Error durante la ejecución:', error);
+        await Actor.setValue('OUTPUT', output);
+
+    } catch (err) {
+        console.error(err);
         await Actor.setValue('OUTPUT', {
             ok: false,
-            error: error.message,
-            stack: error.stack,
+            error: err.message,
+            stack: err.stack,
         });
     } finally {
         await browser.close();
