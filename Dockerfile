@@ -1,16 +1,12 @@
-# Usa la imagen oficial de Playwright con Chromium
 FROM mcr.microsoft.com/playwright:v1.52.0-jammy
 
 WORKDIR /usr/src/app
 
-# Copia sólo package.json y package-lock.json para caché de dependencias
-COPY package.json package-lock.json* ./
+# Copiamos package.json e instalamos dependencias (npm install en lugar de npm ci)
+COPY package.json ./
+RUN npm install --omit=dev
 
-# Instala dependencias de producción
-RUN npm ci --omit=dev
-
-# Copia el resto del código
+# Copiamos el resto
 COPY . .
 
-# Comando por defecto
 CMD ["npm", "start"]
