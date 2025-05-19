@@ -2,7 +2,6 @@
   "name": "mi-actor-apify",
   "version": "1.0.0",
   "description": "Mi actor de Apify",
-  "main": "main.js",
   "scripts": {
     "start": "apify run"
   },
