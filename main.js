@@ -14,52 +14,54 @@ Actor.main(async () => {
 
     try {
         await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
-            waitUntil: 'domcontentloaded',
+            waitUntil: 'load',
             timeout: 60000
         });
 
-        // Aceptar cookies si aparece Klaro
         const botonAceptarCookies = page.locator('#klaro button[title="Aceptar"]');
-        if (await botonAceptarCookies.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await botonAceptarCookies.click().catch(() => {});
+        try {
+            if (await botonAceptarCookies.isVisible({ timeout: 3000 })) {
+                await botonAceptarCookies.click();
+                console.log('Cookies aceptadas');
+            }
+        } catch (e) {
+            console.log('No se mostró el aviso de cookies');
         }
 
-        // Esperar explícitamente al iframe con ID que empieza por p_p_
-        const iframeHandle = await page.waitForSelector('iframe[id^="p_p_"]', { timeout: 30000 });
-        const formularioFrame = await iframeHandle.contentFrame();
+        // Esperar al iframe principal visible
+        const iframeLocator = page.locator('iframe[title="Contenido"]');
+        await iframeLocator.waitFor({ timeout: 60000 });
 
-        if (!formularioFrame) throw new Error('No se pudo acceder al iframe del formulario');
+        const iframeElement = await iframeLocator.elementHandle();
+        if (!iframeElement) throw new Error('No se encontró el iframe con título "Contenido"');
 
-        // Rellenar formulario
-        await formularioFrame.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
-        await formularioFrame.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
+        const iframe = await iframeElement.contentFrame();
+        if (!iframe) throw new Error('No se pudo acceder al contenido del iframe');
 
-        await formularioFrame.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
-        await formularioFrame.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
+        // Esperar y rellenar los campos
+        await iframe.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
+        await iframe.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
 
-        const botonBuscar = formularioFrame.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
+        await iframe.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
+        await iframe.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
+
+        const botonBuscar = iframe.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
         await botonBuscar.scrollIntoViewIfNeeded();
         await botonBuscar.click();
 
         // Esperar resultado
-        await formularioFrame.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
+        await iframe.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
 
-        const contenidoHTML = await formularioFrame.content();
-        const noHayDatos = contenidoHTML.includes('Ningún dato disponible en esta tabla');
+        const contenido = await iframe.content();
+        const hayResultado = !contenido.includes('Ningún dato disponible en esta tabla');
 
-        if (noHayDatos) {
-            await Actor.setValue('OUTPUT', {
-                ok: true,
-                resultado: 'no_concursal',
-                mensaje: 'La empresa no figura en situación concursal'
-            });
-        } else {
-            await Actor.setValue('OUTPUT', {
-                ok: true,
-                resultado: 'concursal',
-                mensaje: 'La empresa figura con publicaciones concursales'
-            });
-        }
+        await Actor.setValue('OUTPUT', {
+            ok: true,
+            resultado: hayResultado ? 'concursal' : 'no_concursal',
+            mensaje: hayResultado
+                ? 'La empresa figura con publicaciones concursales'
+                : 'La empresa no figura en situación concursal'
+        });
 
     } catch (error) {
         await Actor.setValue('OUTPUT', {
