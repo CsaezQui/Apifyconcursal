@@ -1,47 +1,51 @@
-import { Actor } from 'apify';
-import { chromium } from 'playwright'; // Usa 'firefox' o 'webkit' si lo prefieres
+import { chromium } from 'playwright';
 
-await Actor.init();
+const BASE_URL = 'https://www.publicidadconcursal.es/consulta-publicidad-concursal-new';
 
-const input = await Actor.getInput();
-const { nombre, cif } = input;
+export const main = async () => {
+    const input = await Actor.getInput();
+    const { nombre, cif } = input;
 
-const browser = await chromium.launch({ headless: true });
-const page = await browser.newPage();
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
 
-try {
-    await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { waitUntil: 'load', timeout: 60000 });
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
 
-    await page.fill('#nombre', nombre);
-    await page.fill('#documentoIdentificativo', cif);
+    if (nombre) await page.fill('input[placeholder*="nombre"]', nombre);
+    if (cif) await page.fill('input[placeholder*="NIF"]', cif);
 
-    await page.click('#botonBuscar');
+    await Promise.all([
+        page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+        page.click('button:has-text("Buscar")')
+    ]);
 
-    // Espera a que se cargue el contenedor de resultados sin exigir visibilidad completa
-    await page.waitForSelector('.dataTables_wrapper', { state: 'attached', timeout: 20000 });
-    console.log("Tabla localizada correctamente");
+    // Espera a que aparezca el mensaje de sin resultados o la tabla
+    await page.waitForFunction(() => {
+        return document.body.innerText.includes('No se han encontrado resultados') ||
+               document.querySelector('.dataTables_wrapper');
+    }, { timeout: 10000 });
 
-    const rows = await page.$$('.dataTables_wrapper table tbody tr');
+    const salida = {
+        nombreBuscado: nombre || null,
+        cifBuscado: cif || null,
+    };
 
-    let resultados = [];
+    if (await page.isVisible('text="No se han encontrado resultados"')) {
+        salida.estado = 'sin_resultados';
+    } else {
+        salida.estado = 'con_resultados';
+        salida.htmlTabla = await page.innerHTML('.dataTables_wrapper');
 
-    for (const row of rows) {
-        const columnas = await row.$$('td');
-        const datos = await Promise.all(columnas.map(async col => (await col.textContent())?.trim()));
-        resultados.push(datos);
+        const enlace = await page.$('a[href*="portal/layout"]');
+        if (enlace) {
+            await Promise.all([
+                page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+                enlace.click(),
+            ]);
+            salida.htmlDetalle = await page.content();
+        }
     }
 
-    await Actor.pushData({
-        nombre,
-        cif,
-        resultados
-    });
-
-} catch (error) {
-    console.error("Error durante la ejecución:", error);
-    throw error;
-
-} finally {
     await browser.close();
-    await Actor.exit();
-}
+    await Actor.pushData(salida);
+};
