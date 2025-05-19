@@ -1,0 +1,18 @@
+{
+  "title": "Input schema for Apify Concursal",
+  "type": "object",
+  "properties": {
+    "nombreEmpresa": {
+      "title": "Nombre de la empresa",
+      "type": "string",
+      "description": "Nombre del deudor/inhabilitado/administrador concursal"
+    },
+    "documentoIdentificativo": {
+      "title": "Documento identificativo",
+      "type": "string",
+      "description": "CIF/NIF/NIE o pasaporte"
+    }
+  },
+  "required": ["nombreEmpresa", "documentoIdentificativo"],
+  "additionalProperties": false
+}
