@@ -14,51 +14,37 @@ Actor.main(async () => {
 
     try {
         await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
-            waitUntil: 'load',
+            waitUntil: 'domcontentloaded',
             timeout: 60000
         });
 
+        // Aceptar cookies si están presentes
         const botonAceptarCookies = page.locator('#klaro button[title="Aceptar"]');
-        try {
-            if (await botonAceptarCookies.isVisible({ timeout: 3000 })) {
-                await botonAceptarCookies.click();
-                console.log('Cookies aceptadas');
-            }
-        } catch (e) {
-            console.log('No se mostró el aviso de cookies');
+        if (await botonAceptarCookies.isVisible({ timeout: 2000 }).catch(() => false)) {
+            await botonAceptarCookies.click();
         }
 
-        // Esperar al iframe principal visible
-        const iframeLocator = page.locator('iframe[title="Contenido"]');
-        await iframeLocator.waitFor({ timeout: 60000 });
+        // Esperar los campos e introducir los datos
+        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
+        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
 
-        const iframeElement = await iframeLocator.elementHandle();
-        if (!iframeElement) throw new Error('No se encontró el iframe con título "Contenido"');
+        await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
+        await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
 
-        const iframe = await iframeElement.contentFrame();
-        if (!iframe) throw new Error('No se pudo acceder al contenido del iframe');
-
-        // Esperar y rellenar los campos
-        await iframe.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
-        await iframe.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
-
-        await iframe.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
-        await iframe.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
-
-        const botonBuscar = iframe.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
+        const botonBuscar = page.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
         await botonBuscar.scrollIntoViewIfNeeded();
         await botonBuscar.click();
 
-        // Esperar resultado
-        await iframe.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
+        // Esperar al resultado de búsqueda
+        await page.waitForSelector('.resultado-busqueda, .portlet-msg-info', { timeout: 30000 });
 
-        const contenido = await iframe.content();
-        const hayResultado = !contenido.includes('Ningún dato disponible en esta tabla');
+        const contenido = await page.content();
+        const hayDatos = !contenido.includes('Ningún dato disponible en esta tabla');
 
         await Actor.setValue('OUTPUT', {
             ok: true,
-            resultado: hayResultado ? 'concursal' : 'no_concursal',
-            mensaje: hayResultado
+            resultado: hayDatos ? 'concursal' : 'no_concursal',
+            mensaje: hayDatos
                 ? 'La empresa figura con publicaciones concursales'
                 : 'La empresa no figura en situación concursal'
         });
