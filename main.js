@@ -19,28 +19,25 @@ Actor.main(async () => {
         });
 
         const botonAceptarCookies = page.locator('#klaro button[title="Aceptar"]');
-        if (await botonAceptarCookies.isVisible({ timeout: 2000 })) {
+        if (await botonAceptarCookies.isVisible({ timeout: 3000 })) {
             await botonAceptarCookies.click();
         }
 
-        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', { timeout: 30000 });
-        await page.waitForSelector('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', { timeout: 30000 });
+        // Rellenamos los campos
+        await page.fill('input[id*="nombre"]', nombreEmpresa);
+        await page.fill('input[id*="documentoIdentificativo"]', documentoIdentificativo);
 
-        await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_nombre', nombreEmpresa);
-        await page.fill('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_documentoIdentificativo', documentoIdentificativo);
-
-        const botonBuscar = page.locator('#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search');
+        // Hacemos clic en el botón Buscar
+        const botonBuscar = page.locator('button[id*="search"]');
         await botonBuscar.scrollIntoViewIfNeeded();
         await botonBuscar.click();
 
-        // Esperamos a que aparezca el contenedor de resultados
-        await page.waitForSelector('div[id*="resultadoBusquedaConcursal"]', { timeout: 30000 });
+        // Esperamos a que aparezca algún resultado o el mensaje de tabla vacía
+        await page.waitForSelector('.resultado-busqueda, .dataTables_empty, .portlet-msg-info', { timeout: 60000 });
 
-        // Leemos el contenido visible del contenedor
-        const contenidoResultado = await page.textContent('div[id*="resultadoBusquedaConcursal"]');
-        const noHayDatos = contenidoResultado.includes('Ningún dato disponible en esta tabla');
+        const sinDatos = await page.locator('td.dataTables_empty').isVisible().catch(() => false);
 
-        if (noHayDatos) {
+        if (sinDatos) {
             await Actor.setValue('OUTPUT', {
                 ok: true,
                 resultado: 'no_concursal',
