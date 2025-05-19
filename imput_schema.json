@@ -6,7 +6,7 @@
     "nombreEmpresa": {
       "type": "string",
       "title": "Nombre de la empresa o persona",
-      "description": "Debe introducir el nombre a buscar (Deudor / Inhabilitado / Administrador concursal).",
+      "description": "Deudor / Inhabilitado / Administrador concursal",
       "editor": "textfield"
     },
     "documentoIdentificativo": {
