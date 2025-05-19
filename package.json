@@ -1,14 +1,10 @@
 {
-  "name": "scraper-publicidad-concursal",
+  "name": "concursal-scraper",
   "version": "1.0.0",
-  "description": "Consulta si una empresa está en situación concursal en www.publicidadconcursal.es",
+  "description": "Scraper de publicidadconcursal.es",
   "main": "main.js",
   "scripts": {
     "start": "node main.js"
   },
-  "dependencies": {
-    "playwright": "^1.52.0",
-    "apify": "^3.4.2"
-  },
-  "type": "module"
+  ...
 }
