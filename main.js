@@ -1,51 +1,39 @@
-import { chromium } from 'playwright';
+const { chromium } = require('playwright');
 
-const BASE_URL = 'https://www.publicidadconcursal.es/consulta-publicidad-concursal-new';
+console.log('INICIO DEL ACTOR');
 
-export const main = async () => {
-    const input = await Actor.getInput();
-    const { nombre, cif } = input;
+(async () => {
+    try {
+        console.log('Lanzando navegador...');
+        const browser = await chromium.launch({ headless: true });
+        const context = await browser.newContext();
+        const page = await context.newPage();
 
-    const browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
+        console.log('Navegando a la web...');
+        await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', { timeout: 20000 });
 
-    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+        console.log('Esperando a que cargue el campo de nombre...');
+        await page.waitForSelector('input[name="nombre"]', { timeout: 10000 });
 
-    if (nombre) await page.fill('input[placeholder*="nombre"]', nombre);
-    if (cif) await page.fill('input[placeholder*="NIF"]', cif);
+        console.log('La página se ha cargado correctamente.');
+        console.log('Realizando búsqueda simulada...');
 
-    await Promise.all([
-        page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
-        page.click('button:has-text("Buscar")')
-    ]);
+        // Rellenamos el campo de nombre con texto simulado
+        await page.fill('input[name="nombre"]', 'MERCADONA');
+        await page.click('button[type="submit"]');
 
-    // Espera a que aparezca el mensaje de sin resultados o la tabla
-    await page.waitForFunction(() => {
-        return document.body.innerText.includes('No se han encontrado resultados') ||
-               document.querySelector('.dataTables_wrapper');
-    }, { timeout: 10000 });
+        console.log('Esperando resultados...');
+        await page.waitForSelector('.dataTables_wrapper', { timeout: 15000 });
 
-    const salida = {
-        nombreBuscado: nombre || null,
-        cifBuscado: cif || null,
-    };
+        console.log('¡Resultados localizados!');
 
-    if (await page.isVisible('text="No se han encontrado resultados"')) {
-        salida.estado = 'sin_resultados';
-    } else {
-        salida.estado = 'con_resultados';
-        salida.htmlTabla = await page.innerHTML('.dataTables_wrapper');
+        // Aquí podrías seguir extrayendo datos si quieres
+        // const content = await page.content();
+        // console.log(content);
 
-        const enlace = await page.$('a[href*="portal/layout"]');
-        if (enlace) {
-            await Promise.all([
-                page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
-                enlace.click(),
-            ]);
-            salida.htmlDetalle = await page.content();
-        }
+        await browser.close();
+        console.log('Finalizado correctamente.');
+    } catch (error) {
+        console.error('ERROR DURANTE LA EJECUCIÓN:', error);
     }
-
-    await browser.close();
-    await Actor.pushData(salida);
-};
+})();
