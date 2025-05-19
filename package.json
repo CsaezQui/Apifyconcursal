@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "description": "Actor para consultar el Registro Público Concursal y extraer nombre y CIF de empresas.",
   "main": "main.js",
-  "scripts": {
-    "start": "npx apify run"
-  },
+ "scripts": {
+  "start": "node main.js"
+},
   "author": "",
   "license": "ISC",
   "dependencies": {
