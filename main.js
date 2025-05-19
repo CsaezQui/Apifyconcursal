@@ -12,19 +12,18 @@ Actor.main(async () => {
     const page = await browser.newPage();
 
     try {
-        // 1) Accede a la página
         await page.goto('https://www.publicidadconcursal.es/consulta-publicidad-concursal-new', {
             waitUntil: 'domcontentloaded',
             timeout: 60000,
         });
 
-        // 2) Aceptar cookies si aparece
-        const btnCookies = page.locator('#klaro button[title="Aceptar"]');
-        if (await btnCookies.isVisible({ timeout: 2000 })) {
-            await btnCookies.click();
+        // Aceptar cookies si aparece
+        const cookieBtn = page.locator('#klaro button[title="Aceptar"]');
+        if (await cookieBtn.isVisible({ timeout: 2000 })) {
+            await cookieBtn.click();
         }
 
-        // 3) Rellenar campos de búsqueda
+        // Rellenar formulario
         await page.waitForSelector(
             '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_afectado',
             { timeout: 15000 }
@@ -38,39 +37,37 @@ Actor.main(async () => {
             docId
         );
 
-        // 4) Pulsar “Buscar”
-        const btnBuscar = page.locator(
+        // Pulsar Buscar
+        const buscarBtn = page.locator(
             '#_org_registradores_rpc_concursal_web_ConcursalWebPortlet_search'
         );
-        await btnBuscar.scrollIntoViewIfNeeded();
-        await btnBuscar.click();
+        await buscarBtn.scrollIntoViewIfNeeded();
+        await buscarBtn.click();
 
-        // 5) Esperar resultado: tabla o mensaje “no datos”
-        await page.waitForSelector(
-            '.dataTables_wrapper, .portlet-msg-info',
-            { timeout: 30000 }
-        );
+        // Esperar resultado o mensaje de tabla vacía
+        await page.waitForSelector('.dataTables_wrapper, .portlet-msg-info', {
+            timeout: 30000,
+        });
 
-        // 6) Determinar si hay datos
-        const textoTabla = await page.textContent(
-            'td.dataTables_empty'
-        ).catch(() => '');
-        let output;
-        if (textoTabla && textoTabla.includes('Ningún dato disponible')) {
-            output = {
+        // Comprobar si hay datos
+        const emptyText = await page
+            .textContent('td.dataTables_empty')
+            .catch(() => '');
+        let resultado;
+        if (emptyText && emptyText.includes('Ningún dato disponible')) {
+            resultado = {
                 ok: true,
                 resultado: 'no_concursal',
                 mensaje: 'La empresa no figura en situación concursal',
             };
         } else {
-            output = {
+            resultado = {
                 ok: true,
                 resultado: 'concursal',
                 mensaje: 'La empresa figura con publicaciones concursales',
             };
         }
-
-        await Actor.setValue('OUTPUT', output);
+        await Actor.setValue('OUTPUT', resultado);
 
     } catch (err) {
         console.error(err);
