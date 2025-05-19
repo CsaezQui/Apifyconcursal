@@ -23,21 +23,25 @@ Actor.main(async () => {
             await botonAceptarCookies.click();
         }
 
-        // Rellenamos los campos
-        await page.fill('input[id*="nombre"]', nombreEmpresa);
-        await page.fill('input[id*="documentoIdentificativo"]', documentoIdentificativo);
+        // Esperamos al iframe principal
+        const iframeLocator = page.frameLocator('iframe[title="Contenido"]');
+        await page.waitForSelector('iframe[title="Contenido"]', { timeout: 10000 });
 
-        // Hacemos clic en el botón Buscar
-        const botonBuscar = page.locator('button[id*="search"]');
+        // Rellenamos los campos dentro del iframe
+        await iframeLocator.locator('input[id$="nombre"]').fill(nombreEmpresa, { timeout: 10000 });
+        await iframeLocator.locator('input[id$="documentoIdentificativo"]').fill(documentoIdentificativo, { timeout: 10000 });
+
+        // Clic en el botón de búsqueda
+        const botonBuscar = iframeLocator.locator('button[id$="search"]');
         await botonBuscar.scrollIntoViewIfNeeded();
         await botonBuscar.click();
 
-        // Esperamos a que aparezca algún resultado o el mensaje de tabla vacía
-        await page.waitForSelector('.resultado-busqueda, .dataTables_empty, .portlet-msg-info', { timeout: 60000 });
+        // Esperamos resultados o mensaje de tabla vacía
+        await iframeLocator.locator('.resultado-busqueda, .dataTables_empty, .portlet-msg-info').waitFor({ timeout: 30000 });
 
-        const sinDatos = await page.locator('td.dataTables_empty').isVisible().catch(() => false);
+        const hayMensajeSinDatos = await iframeLocator.locator('td.dataTables_empty').isVisible().catch(() => false);
 
-        if (sinDatos) {
+        if (hayMensajeSinDatos) {
             await Actor.setValue('OUTPUT', {
                 ok: true,
                 resultado: 'no_concursal',
