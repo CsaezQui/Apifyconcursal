@@ -1,7 +1,0 @@
-{
-  "defaultActorId": "carlos.saez.quintero/Apify-concursal",
-  "buildTag": "latest",
-  "env": {
-    "APIFY_DEFAULT_KEY_VALUE_STORE_ID": "default"
-  }
-}
