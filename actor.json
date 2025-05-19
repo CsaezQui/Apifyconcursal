@@ -1,0 +1,12 @@
+{
+  "name": "consulta-publicidad-concursal",
+  "version": "0.0.1",
+  "main": "main.js",
+  "buildTag": "latest",
+  "integrations": {
+    "defaultStorages": {
+      "keyValueStore": "default",
+      "dataset": "default"
+    }
+  }
+}
