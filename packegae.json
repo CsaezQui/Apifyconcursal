@@ -1,0 +1,14 @@
+{
+  "name": "apify-concursal",
+  "version": "1.0.0",
+  "description": "Actor to scrape publicidadconcursal.es",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "apify": "^3.4.2",
+    "playwright": "^1.52.0"
+  }
+}
